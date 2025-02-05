@@ -36,7 +36,7 @@ def visualizeWordFreqData():
             "forceAtlas2Based": {
                 "gravitationalConstant": -200,
                 "centralGravity": 0.15,
-                "springLength": 50,
+                "springLength": 10,
                 "springConstant": 0.2,
                 "damping": 0.9,
                 "avoidOverlap": 1
@@ -53,7 +53,7 @@ def visualizeWordFreqData():
     }""")
     
     colorcode_dict = {}
-    lancaster = LancasterStemmer()
+    # lancaster = LancasterStemmer()
     spell = SpellChecker()
     stem_groups = {}
 
@@ -63,7 +63,7 @@ def visualizeWordFreqData():
 
         # Find closest properly spelt stem
         corrected_word = spell.correction(word)
-        stemmed_word = lancaster.stem(corrected_word if corrected_word != None else word)
+        stemmed_word = corrected_word if corrected_word != None else word # lancaster.stem(corrected_word if corrected_word != None else word)
 
         # Associate common color to the stem
         if stemmed_word not in stem_groups:
@@ -75,7 +75,7 @@ def visualizeWordFreqData():
         # Add Node to diagram
         net.add_node(
             word, 
-            size=min(word_freq * 5, 100), 
+            size=min(word_freq * 10, 500), 
             # color= f"#{colorcode_dict[stemmed_word]}", 
             label=f"{word}\n({word_freq})",
             group=stemmed_word
