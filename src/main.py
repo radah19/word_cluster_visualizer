@@ -12,8 +12,8 @@ def main():
 # vocab_lt = pd.read_pickle('./pickles/vocab_lookup_table')
 
 # doc_lt = pd.read_pickle('./pickles/doc_lookup_table')
-# doc_lt = pd.read_pickle('./pickles/sm_doc_lookup_table')
-doc_lt = pd.read_pickle('./pickles/vs_doc_lookup_table')
+doc_lt = pd.read_pickle('./pickles/sm_doc_lookup_table')
+# doc_lt = pd.read_pickle('./pickles/vs_doc_lookup_table')
 
 # Word Freq Visualization ---------------------------------------------------------------------------
 def visualizeWordFreqData():
@@ -47,7 +47,9 @@ def visualizeWordFreqData():
             if source_word not in root_groups:
                 root_groups[source_word] = []
                 colorcode_dict[source_word] = "%06x" % random.randint(0, 0xFFFFFF)
-            root_groups[source_word].append(word)
+            
+            if word not in root_groups[source_word]:
+                root_groups[source_word].append(word)
 
     # Display Frequencies on PyVis HTML Graph
     net = Network()
@@ -78,22 +80,23 @@ def visualizeWordFreqData():
     for word, word_freq in word_freqs.items():
         _group = corrected_groups[word]  
 
-        # Add Node to diagram
-        net.add_node(
-            word, 
-            size=min(word_freq * 5, 50), 
-            # color= f"#{colorcode_dict[stemmed_word]}", 
-            label=f"{word}\n({word_freq})",
-            group=_group
-            )
+        if len(root_groups[_group]) > 1:
+            # Add Node to diagram
+            net.add_node(
+                word, 
+                size=min(word_freq * 5, 50), 
+                # color= f"#{colorcode_dict[stemmed_word]}", 
+                label=f"{word}\n({word_freq})",
+                group=_group
+                )
 
-        # Add edges to common node to group them together
-        if len(root_groups[_group]) > 1 and root_groups[_group][0] != word:
-            net.add_edge(
-                word,
-                root_groups[_group][0],
-                width=0
-            )
+            # Add edges to common node to group them together
+            if root_groups[_group][0] != word:
+                net.add_edge(
+                    word,
+                    root_groups[_group][0],
+                    width=0
+                )
 
     net.save_graph('word_freq_diagram.html')
 
