@@ -8,27 +8,49 @@ def main():
     visualizeWordFreqData()
 
 # Vars ----------------------------------------------------------------------------------------------
-# vocab = pd.read_pickle('./data/vocab')
-# doc_lt = pd.read_pickle('./data/doc_lookup_table')
-doc_lt = pd.read_pickle('./data/temp.pkl')
-# vocab_lt = pd.read_pickle('./data/vocab_lookup_table')
+# vocab = pd.read_pickle('./pickles/vocab')
+# vocab_lt = pd.read_pickle('./pickles/vocab_lookup_table')
 
+# doc_lt = pd.read_pickle('./pickles/doc_lookup_table')
+# doc_lt = pd.read_pickle('./pickles/sm_doc_lookup_table')
+doc_lt = pd.read_pickle('./pickles/vs_doc_lookup_table')
 
 # Word Freq Visualization ---------------------------------------------------------------------------
 def visualizeWordFreqData():
-    # Simple Counter for Words
+    # Count Word Frequencies and Match Similar Words absed on Levenshtein Distance
     word_freqs = {}
+    colorcode_dict = {}
+    spell = SpellChecker()
+    root_groups = {}
+    corrected_groups = {}
 
     for doc, doc_val in doc_lt.items():
         for word in doc_val:
+            # Prevent Nulls from being added
+            if word == None:
+                continue       
+
+            # Count up times used in document
             if word not in word_freqs:
                 word_freqs[word] = 0
             word_freqs[word] += 1
 
+            # Create source groups for grouping nodes later
+            if word not in corrected_groups:
+                corrected_word = spell.correction(word)
+                source_word = corrected_word if corrected_word != None else word
+                corrected_groups[word] = source_word
+            else:
+                source_word = corrected_groups[word]  
+
+            # Associate common color to the stem
+            if source_word not in root_groups:
+                root_groups[source_word] = []
+                colorcode_dict[source_word] = "%06x" % random.randint(0, 0xFFFFFF)
+            root_groups[source_word].append(word)
+
     # Display Frequencies on PyVis HTML Graph
     net = Network()
-
-    # Update Physics variables for graph
     net.set_options("""{
         "physics": {
             "enabled": true,
@@ -51,41 +73,25 @@ def visualizeWordFreqData():
             "maxVelocity": 30
         }
     }""")
-    
-    colorcode_dict = {}
-    # lancaster = LancasterStemmer()
-    spell = SpellChecker()
-    stem_groups = {}
 
+    # Create Visual Graph
     for word, word_freq in word_freqs.items():
-        if word == None:
-            continue
-
-        # Find closest properly spelt stem
-        corrected_word = spell.correction(word)
-        stemmed_word = corrected_word if corrected_word != None else word # lancaster.stem(corrected_word if corrected_word != None else word)
-
-        # Associate common color to the stem
-        if stemmed_word not in stem_groups:
-            stem_groups[stemmed_word] = []
-            colorcode_dict[stemmed_word] = "%06x" % random.randint(0, 0xFFFFFF)
-
-        stem_groups[stemmed_word].append(word)
+        _group = corrected_groups[word]  
 
         # Add Node to diagram
         net.add_node(
             word, 
-            size=min(word_freq * 10, 500), 
+            size=min(word_freq * 5, 50), 
             # color= f"#{colorcode_dict[stemmed_word]}", 
             label=f"{word}\n({word_freq})",
-            group=stemmed_word
+            group=_group
             )
 
         # Add edges to common node to group them together
-        if len(stem_groups[stemmed_word]) > 1:
+        if len(root_groups[_group]) > 1 and root_groups[_group][0] != word:
             net.add_edge(
                 word,
-                stem_groups[stemmed_word][0],
+                root_groups[_group][0],
                 width=0
             )
 
