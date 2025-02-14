@@ -26,9 +26,11 @@ prompt_toolkit==3.0.50
 pure_eval==0.2.3
 Pygments==2.19.1
 pyparsing==3.2.1
+pyspellchecker==0.8.2
 python-dateutil==2.9.0.post0
 pytz==2025.1
 pyvis==0.3.2
+RapidFuzz==3.12.1
 regex==2024.11.6
 six==1.17.0
 stack-data==0.6.3

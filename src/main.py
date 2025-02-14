@@ -1,28 +1,52 @@
 import pandas as pd
-from nltk.stem import LancasterStemmer
 from pyvis.network import Network
 import random
 from spellchecker import SpellChecker
 import time
 
 def main():
-    visualizeWordFreqData()
+    print("Choose an algorithm to run: \n\t1 - Word Frequency Visualizer \n\t2 - Quit \nex usage: \'1\'")
+    choice = -1
 
+    while choice == -1:
+        choice = input()
+        match choice:
+            case "1": # Word Frequency Visualizer
+                threshold = int(input("Enter threshold value to filter by as number: "))
+                docsize_choice = input("Choose a document size to look through: \n\t- vs (Very Small)\n\t- sm (Small)\n\t- lg (Large)\nex usage: \'sm\'\n")
+
+                match docsize_choice:
+                    case "vs":
+                        print("Threshold: ", threshold, " | Document Size: Very Small")
+                        visualizeWordFreqData(threshold, vs_doc_lt)
+                    case "sm":
+                        print("Threshold: ", threshold, " | Document Size: Small")
+                        visualizeWordFreqData(threshold, sm_doc_lt)
+                    case "lg":
+                        print("Threshold: ", threshold, " | Document Size: Large")
+                        visualizeWordFreqData(threshold, lg_doc_lt)
+                    case _:
+                        print("Size not found")
+            case "2": # Quit
+                print("Quitting app")
+            case _:
+                print("Option invalid/unavailable, please try again")
+                choice = -1
+    
 # Vars ----------------------------------------------------------------------------------------------
 # vocab = pd.read_pickle('./pickles/vocab')
 # vocab_lt = pd.read_pickle('./pickles/vocab_lookup_table')
 
-doc_lt = pd.read_pickle('./pickles/doc_lookup_table')
-# doc_lt = pd.read_pickle('./pickles/sm_doc_lookup_table')
-# doc_lt = pd.read_pickle('./pickles/vs_doc_lookup_table')
+lg_doc_lt = pd.read_pickle('./pickles/doc_lookup_table')
+sm_doc_lt = pd.read_pickle('./pickles/sm_doc_lookup_table')
+vs_doc_lt = pd.read_pickle('./pickles/vs_doc_lookup_table')
 
 # Word Freq Visualization ---------------------------------------------------------------------------
-def visualizeWordFreqData():
+def visualizeWordFreqData(threshold: int, doc_lt: dict):
     timer = 0
 
     # Count Word Frequencies, then filter words not meeting a threshold
     all_words_freqs = {}
-    threshold = 25
 
     print("Counting Frequencies of all Words across documents...")
     timer = time.time()
@@ -115,7 +139,7 @@ def visualizeWordFreqData():
             # Add Node to diagram
             net.add_node(
                 word, 
-                size=min(word_freq / 10, 20), 
+                size=min(word_freq * 3, 20), 
                 # color= f"#{colorcode_dict[stemmed_word]}", 
                 label=f"{word}\n({word_freq})",
                 group=_group
