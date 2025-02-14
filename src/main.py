@@ -1,8 +1,8 @@
 import pandas as pd
-from nltk.stem import LancasterStemmer
 from pyvis.network import Network
 import random
 from spellchecker import SpellChecker
+from layered_dict import LayeredDict
 
 def main():
     visualizeWordFreqData()
@@ -12,13 +12,17 @@ def main():
 # vocab_lt = pd.read_pickle('./pickles/vocab_lookup_table')
 
 # doc_lt = pd.read_pickle('./pickles/doc_lookup_table')
-doc_lt = pd.read_pickle('./pickles/sm_doc_lookup_table')
-# doc_lt = pd.read_pickle('./pickles/vs_doc_lookup_table')
+# doc_lt = pd.read_pickle('./pickles/sm_doc_lookup_table')
+doc_lt = pd.read_pickle('./pickles/vs_doc_lookup_table')
+
+dict_layers = 2
+dict_buckets = 27
 
 # Word Freq Visualization ---------------------------------------------------------------------------
 def visualizeWordFreqData():
     # Count Word Frequencies and Match Similar Words absed on Levenshtein Distance
-    word_freqs = {}
+
+    word_freqs = LayeredDict(dict_layers, dict_buckets)
     colorcode_dict = {}
     spell = SpellChecker()
     root_groups = {}
@@ -31,9 +35,7 @@ def visualizeWordFreqData():
                 continue       
 
             # Count up times used in document
-            if word not in word_freqs:
-                word_freqs[word] = 0
-            word_freqs[word] += 1
+            word_freqs.increment_entry(word)
 
             # Create source groups for grouping nodes later
             if word not in corrected_groups:
