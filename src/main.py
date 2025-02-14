@@ -3,6 +3,7 @@ from nltk.stem import LancasterStemmer
 from pyvis.network import Network
 import random
 from spellchecker import SpellChecker
+import time
 
 def main():
     visualizeWordFreqData()
@@ -11,15 +12,20 @@ def main():
 # vocab = pd.read_pickle('./pickles/vocab')
 # vocab_lt = pd.read_pickle('./pickles/vocab_lookup_table')
 
-# doc_lt = pd.read_pickle('./pickles/doc_lookup_table')
-doc_lt = pd.read_pickle('./pickles/sm_doc_lookup_table')
+doc_lt = pd.read_pickle('./pickles/doc_lookup_table')
+# doc_lt = pd.read_pickle('./pickles/sm_doc_lookup_table')
 # doc_lt = pd.read_pickle('./pickles/vs_doc_lookup_table')
 
 # Word Freq Visualization ---------------------------------------------------------------------------
 def visualizeWordFreqData():
+    timer = 0
+
     # Count Word Frequencies, then filter words not meeting a threshold
     all_words_freqs = {}
-    threshold = 3
+    threshold = 25
+
+    print("Counting Frequencies of all Words across documents...")
+    timer = time.time()
 
     for doc, doc_val in doc_lt.items():
         for word in doc_val:
@@ -32,17 +38,27 @@ def visualizeWordFreqData():
                 all_words_freqs[word] = 0
             all_words_freqs[word] += 1
 
+    print("Execution time: ", time.time() - timer, " seconds")
+
     # Filter by Threshold Value
+    timer = time.time()
+    print("Filtering words with frequencies below threshold...")
+
     word_freqs = {}
     for word, word_freq in all_words_freqs.items():
         if word_freq >= threshold:
             word_freqs[word] = word_freq
+    
+    print("Execution time: ", time.time() - timer, " seconds")
 
     # Match Similar Words based on Levenshtein Distance
     colorcode_dict = {}
     spell = SpellChecker()
     root_groups = {}
     corrected_groups = {}
+
+    timer = time.time()
+    print("Spell Checking words via Levensthein Algorithm & Grouping them...")
 
     for word, word_freq in word_freqs.items():
         # Create source groups for grouping nodes later
@@ -60,6 +76,8 @@ def visualizeWordFreqData():
         
         if word not in root_groups[source_word]:
             root_groups[source_word].append(word)
+    
+    print("Execution time: ", time.time() - timer, " seconds")
 
     # Display Frequencies on PyVis HTML Graph
     net = Network()
@@ -87,6 +105,9 @@ def visualizeWordFreqData():
     }""")
 
     # Create Visual Graph
+    timer = time.time()
+    print("Generating Graph...")
+
     for word, word_freq in word_freqs.items():
         _group = corrected_groups[word]  
 
@@ -94,7 +115,7 @@ def visualizeWordFreqData():
             # Add Node to diagram
             net.add_node(
                 word, 
-                size=min(word_freq * 5, 50), 
+                size=min(word_freq / 10, 20), 
                 # color= f"#{colorcode_dict[stemmed_word]}", 
                 label=f"{word}\n({word_freq})",
                 group=_group
@@ -107,7 +128,10 @@ def visualizeWordFreqData():
                     root_groups[_group][0],
                     width=0
                 )
+    
+    print("Execution time: ", time.time() - timer, " seconds")
 
+    print("Done!")
     net.save_graph('word_freq_diagram.html')
 
 main()
