@@ -17,12 +17,9 @@ doc_lt = pd.read_pickle('./pickles/sm_doc_lookup_table')
 
 # Word Freq Visualization ---------------------------------------------------------------------------
 def visualizeWordFreqData():
-    # Count Word Frequencies and Match Similar Words absed on Levenshtein Distance
-    word_freqs = {}
-    colorcode_dict = {}
-    spell = SpellChecker()
-    root_groups = {}
-    corrected_groups = {}
+    # Count Word Frequencies, then filter words not meeting a threshold
+    all_words_freqs = {}
+    threshold = 3
 
     for doc, doc_val in doc_lt.items():
         for word in doc_val:
@@ -30,26 +27,39 @@ def visualizeWordFreqData():
             if word == None:
                 continue       
 
-            # Count up times used in document
-            if word not in word_freqs:
-                word_freqs[word] = 0
-            word_freqs[word] += 1
+            # Count up times used across documents
+            if word not in all_words_freqs:
+                all_words_freqs[word] = 0
+            all_words_freqs[word] += 1
 
-            # Create source groups for grouping nodes later
-            if word not in corrected_groups:
-                corrected_word = spell.correction(word)
-                source_word = corrected_word if corrected_word != None else word
-                corrected_groups[word] = source_word
-            else:
-                source_word = corrected_groups[word]  
+    # Filter by Threshold Value
+    word_freqs = {}
+    for word, word_freq in all_words_freqs.items():
+        if word_freq >= threshold:
+            word_freqs[word] = word_freq
 
-            # Associate common color to the stem
-            if source_word not in root_groups:
-                root_groups[source_word] = []
-                colorcode_dict[source_word] = "%06x" % random.randint(0, 0xFFFFFF)
-            
-            if word not in root_groups[source_word]:
-                root_groups[source_word].append(word)
+    # Match Similar Words based on Levenshtein Distance
+    colorcode_dict = {}
+    spell = SpellChecker()
+    root_groups = {}
+    corrected_groups = {}
+
+    for word, word_freq in word_freqs.items():
+        # Create source groups for grouping nodes later
+        if word not in corrected_groups:
+            corrected_word = spell.correction(word)
+            source_word = corrected_word if corrected_word != None else word
+            corrected_groups[word] = source_word
+        else:
+            source_word = corrected_groups[word]  
+
+        # Associate groups
+        if source_word not in root_groups:
+            root_groups[source_word] = []
+            colorcode_dict[source_word] = "%06x" % random.randint(0, 0xFFFFFF)
+        
+        if word not in root_groups[source_word]:
+            root_groups[source_word].append(word)
 
     # Display Frequencies on PyVis HTML Graph
     net = Network()
