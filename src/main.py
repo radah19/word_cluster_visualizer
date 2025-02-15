@@ -2,33 +2,55 @@ import pandas as pd
 from pyvis.network import Network
 import random
 from spellchecker import SpellChecker
+from affixspellchecker import AffixSpellChecker
 import time
 
 def main():
-    print("Choose an algorithm to run: \n\t1 - Word Frequency Visualizer \n\t2 - Quit \nex usage: \'1\'")
     choice = -1
 
     while choice == -1:
+        print("\nChoose an algorithm to run: \n\t1 - Word Frequency Visualizer \n\t2 - Quit \nex usage: \'1\'\n")
         choice = input()
         match choice:
             case "1": # Word Frequency Visualizer
                 threshold = int(input("Enter threshold value to filter by as number: "))
+
                 docsize_choice = input("Choose a document size to look through: \n\t- vs (Very Small)\n\t- sm (Small)\n\t- lg (Large)\nex usage: \'sm\'\n")
+                doc_choice = None
 
                 match docsize_choice:
                     case "vs":
-                        print("Threshold: ", threshold, " | Document Size: Very Small")
-                        visualizeWordFreqData(threshold, vs_doc_lt)
+                        doc_choice = vs_doc_lt
                     case "sm":
-                        print("Threshold: ", threshold, " | Document Size: Small")
-                        visualizeWordFreqData(threshold, sm_doc_lt)
+                        doc_choice = sm_doc_lt
                     case "lg":
-                        print("Threshold: ", threshold, " | Document Size: Large")
-                        visualizeWordFreqData(threshold, lg_doc_lt)
+                        doc_choice = lg_doc_lt
                     case _:
                         print("Size not found")
+                        choice = -1
+                        return
+                
+                spellcheck_lvl = input("Enter the associated value of type of spellchecker to use: \n\t1 - pyspellchecker with Distance=1 (Fast)\n\t2 - pyspellchecker with Distance=2 (Precise)\n\t3 - AffixSpellChecker (TBA)")
+                spellchecker_choice = None
+
+                match spellcheck_lvl:
+                    case "1":
+                        spellchecker_choice = "Peter Norvig Spellchecker - Distance = 1"
+                    case "2":
+                        spellchecker_choice = "Peter Norvig Spellchecker - Distance = 2"
+                    case "3":
+                        spellchecker_choice = "Affix Spellchecker"
+                    case _:
+                        print("Invalid Value")
+                        choice = -1
+                        return
+             
+                print("Threshold: ", threshold, " | Document Size: ", docsize_choice, " | Spellchecker: ", spellchecker_choice)
+                visualizeWordFreqData(threshold, doc_choice, spellcheck_lvl)
+
             case "2": # Quit
                 print("Quitting app")
+
             case _:
                 print("Option invalid/unavailable, please try again")
                 choice = -1
@@ -42,7 +64,7 @@ sm_doc_lt = pd.read_pickle('./pickles/sm_doc_lookup_table')
 vs_doc_lt = pd.read_pickle('./pickles/vs_doc_lookup_table')
 
 # Word Freq Visualization ---------------------------------------------------------------------------
-def visualizeWordFreqData(threshold: int, doc_lt: dict):
+def visualizeWordFreqData(threshold: int, doc_lt: dict, spellcheck_lvl: int):
     timer = 0
 
     # Count Word Frequencies, then filter words not meeting a threshold
@@ -77,9 +99,16 @@ def visualizeWordFreqData(threshold: int, doc_lt: dict):
 
     # Match Similar Words based on Levenshtein Distance
     colorcode_dict = {}
-    spell = SpellChecker()
     root_groups = {}
     corrected_groups = {}
+
+    spell = None
+    if spellcheck_lvl == 1:
+        spell = SpellChecker(distance=1)
+    elif spellcheck_lvl == 2:
+        spell = SpellChecker()
+    else:
+        spell = AffixSpellChecker()
 
     timer = time.time()
     print("Spell Checking words via Levensthein Algorithm & Grouping them...")
