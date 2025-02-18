@@ -30,7 +30,7 @@ def main():
                         choice = -1
                         return
                 
-                spellcheck_lvl = input("Enter the associated value of type of spellchecker to use: \n\t1 - pyspellchecker with Distance=1 (Fast)\n\t2 - pyspellchecker with Distance=2 (Precise)\n\t3 - AffixSpellChecker (TBA)")
+                spellcheck_lvl = input("Enter the associated value of type of spellchecker to use: \n\t1 - pyspellchecker with Distance=1 (Fast)\n\t2 - pyspellchecker with Distance=2 (Precise)\n\t3 - AffixSpellChecker (Prioritizes Affixes)\n")
                 spellchecker_choice = None
 
                 match spellcheck_lvl:
