@@ -168,7 +168,7 @@ def visualizeWordFreqData(threshold: int, doc_lt: dict, spellcheck_lvl: int):
             # Add Node to diagram
             net.add_node(
                 word, 
-                size=min(word_freq * 3, 20), 
+                size=min(word_freq / 2, 30), 
                 # color= f"#{colorcode_dict[stemmed_word]}", 
                 label=f"{word}\n({word_freq})",
                 group=_group

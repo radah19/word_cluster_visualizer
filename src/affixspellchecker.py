@@ -14,12 +14,12 @@ class AffixSpellChecker:
             'un', 'in', 're', 'dis', 'over', 'under', 'pre', 'post', 'non', 'sub',
             'inter', 'trans', 'super', 'semi', 'anti', 'mid', 'mis', 'out', 'co',
             'a', 'ab', 'ad', 'be', 'bi', 'com', 'con', 'de', 'em', 'en', 'ex', 'fore',
-            'hyper', 'im', 'ir', 'macro', 'mal', 'mega', 'micro', 'mini', 'mono',
+            'hyper', 'ir', 'macro', 'mal', 'mega', 'micro', 'mini', 'mono',
             'multi', 'neo', 'omni', 'para', 'per', 'poly', 'pro', 'proto', 'pseudo',
             'retro', 'self', 'tele', 'tri', 'ultra', 'uni', 'vice'
         }
         self.suffixes = {
-            's', 'es', 'ing', 'ed', 'er', 'est', 'ful', 'ness', 'less', 'ly', 'able', 'ible',
+            's', 'es', 'ing', 'ed', 'd', 'er', 'est', 'ful', 'ness', 'less', 'ly', 'able', 'ible',
             'al', 'ial', 'ic', 'ical', 'ious', 'ous', 'ive', 'ative', 'ment', 'ion',
             'ation', 'ity', 'ty', 'ize', 'ise', 'dom', 'ship', 'hood', 'ish', 'fold',
             'age', 'an', 'ance', 'ancy', 'ant', 'arium', 'ary', 'ate', 'cide', 'cracy',
