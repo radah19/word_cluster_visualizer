@@ -1,2 +1,4 @@
 venv
 __pycache__
+lib
+word_freq_diagram.html
