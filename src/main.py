@@ -4,12 +4,13 @@ import random
 from spellchecker import SpellChecker
 from affixspellchecker import AffixSpellChecker
 import time
+from tqdm import tqdm
 
 def main():
     choice = -1
 
     while choice == -1:
-        print("\nChoose an algorithm to run: \n\t1 - Word Frequency Visualizer \n\t2 - Quit \nex usage: \'1\'\n")
+        print("\nChoose an algorithm to run: \n\t1 - Word Frequency Visualizer \n\t2 - Word Cluster Visualizer \n\t3 - Quit \nex usage: \'1\'\n")
         choice = input()
         match choice:
             case "1": # Word Frequency Visualizer
@@ -48,7 +49,10 @@ def main():
                 print("Threshold: ", threshold, " | Document Size: ", docsize_choice, " | Spellchecker: ", spellchecker_choice)
                 visualizeWordFreqData(threshold, doc_choice, spellcheck_lvl)
 
-            case "2": # Quit
+            case "2": # Word Cluster Visualizer
+                visualizeClusterCompData()
+
+            case "3": # Quit
                 print("Quitting app")
 
             case _:
@@ -70,10 +74,9 @@ def visualizeWordFreqData(threshold: int, doc_lt: dict, spellcheck_lvl: int):
     # Count Word Frequencies, then filter words not meeting a threshold
     all_words_freqs = {}
 
-    print("Counting Frequencies of all Words across documents...")
     timer = time.time()
 
-    for doc, doc_val in doc_lt.items():
+    for doc, doc_val in tqdm(doc_lt.items(), desc="Counting Frequencies of all Words across documents".ljust(65)):
         for word in doc_val:
             # Prevent Nulls from being added
             if word == None:
@@ -84,18 +87,16 @@ def visualizeWordFreqData(threshold: int, doc_lt: dict, spellcheck_lvl: int):
                 all_words_freqs[word] = 0
             all_words_freqs[word] += 1
 
-    print("Execution time: ", time.time() - timer, " seconds")
+    print("\tExecution time: ", time.time() - timer, " seconds")
 
     # Filter by Threshold Value
     timer = time.time()
-    print("Filtering words with frequencies below threshold...")
 
     word_freqs = {}
-    for word, word_freq in all_words_freqs.items():
+    for word, word_freq in tqdm(all_words_freqs.items(), desc="Filtering words with frequencies below threshold".ljust(65)):
         if word_freq >= threshold:
             word_freqs[word] = word_freq
-    
-    print("Execution time: ", time.time() - timer, " seconds")
+    print("\tExecution time: ", time.time() - timer, " seconds")
 
     # Match Similar Words based on Levenshtein Distance
     colorcode_dict = {}
@@ -111,9 +112,8 @@ def visualizeWordFreqData(threshold: int, doc_lt: dict, spellcheck_lvl: int):
         spell = AffixSpellChecker()
 
     timer = time.time()
-    print("Spell Checking words via Levensthein Algorithm & Grouping them...")
 
-    for word, word_freq in word_freqs.items():
+    for word, word_freq in tqdm(word_freqs.items(), desc="Spell Checking words via Levensthein Algorithm & Grouping them".ljust(65)):
         # Create source groups for grouping nodes later
         if word not in corrected_groups:
             corrected_word = spell.correction(word)
@@ -130,7 +130,7 @@ def visualizeWordFreqData(threshold: int, doc_lt: dict, spellcheck_lvl: int):
         if word not in root_groups[source_word]:
             root_groups[source_word].append(word)
     
-    print("Execution time: ", time.time() - timer, " seconds")
+    print("\tExecution time: ", time.time() - timer, " seconds")
 
     # Display Frequencies on PyVis HTML Graph
     net = Network()
@@ -159,9 +159,8 @@ def visualizeWordFreqData(threshold: int, doc_lt: dict, spellcheck_lvl: int):
 
     # Create Visual Graph
     timer = time.time()
-    print("Generating Graph...")
 
-    for word, word_freq in word_freqs.items():
+    for word, word_freq in tqdm(word_freqs.items(), desc="Generating Graph...".ljust(65)):
         _group = corrected_groups[word]  
 
         if len(root_groups[_group]) > 1:
@@ -182,9 +181,13 @@ def visualizeWordFreqData(threshold: int, doc_lt: dict, spellcheck_lvl: int):
                     width=0
                 )
     
-    print("Execution time: ", time.time() - timer, " seconds")
+    print("\tExecution time: ", time.time() - timer, " seconds")
 
     print("Done!")
     net.save_graph('word_freq_diagram.html')
+
+def visualizeClusterCompData():
+    
+    net.save_graph('cluster_comp_diagram.html')
 
 main()
