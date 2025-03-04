@@ -1,8 +1,6 @@
 # Based off Peter Norvig's Spellchecker
 # http://norvig.com/spell-correct.html
 
-import nltk
-nltk.download('words')
 from nltk.corpus import words as nltk_words
 
 from collections import Counter

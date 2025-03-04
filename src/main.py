@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 from pyvis.network import Network
 import random
@@ -5,12 +6,15 @@ from spellchecker import SpellChecker
 from affixspellchecker import AffixSpellChecker
 import time
 from tqdm import tqdm
+import nltk
+nltk.download('words')
+from nltk.corpus import words as nltk_words
 
 def main():
     choice = -1
 
     while choice == -1:
-        print("\nChoose an algorithm to run: \n\t1 - Word Frequency Visualizer \n\t2 - Word Cluster Visualizer \n\t3 - Quit \nex usage: \'1\'\n")
+        print("\nChoose an algorithm to run: \n\t1 - Word Frequency Visualizer \n\t2 - Word Cluster Visualizer \n\t3 - Word Cluster w/ Frequency Visualizer \n\t4 - Quit \nex usage: \'1\'\n")
         choice = input()
         match choice:
             case "1": # Word Frequency Visualizer
@@ -50,9 +54,14 @@ def main():
                 visualizeWordFreqData(threshold, doc_choice, spellcheck_lvl)
 
             case "2": # Word Cluster Visualizer
-                visualizeClusterCompData()
+                min_threshold = int(input("Enter minimum threshold value (clusters with less words than this threshold are not included): "))
+                max_threshold = int(input("Enter maximum threshold value (clusters with more words than this threshold are not included): "))
+                visualizeClusterCompData(min_threshold, max_threshold)
 
-            case "3": # Quit
+            case "3": # Word Cluster w/ Frequency Visualizer
+                print("N/A")
+
+            case "4": # Quit
                 print("Quitting app")
 
             case _:
@@ -66,6 +75,31 @@ def main():
 lg_doc_lt = pd.read_pickle('./pickles/doc_lookup_table')
 sm_doc_lt = pd.read_pickle('./pickles/sm_doc_lookup_table')
 vs_doc_lt = pd.read_pickle('./pickles/vs_doc_lookup_table')
+
+# Display Frequencies on PyVis HTML Graph
+net = Network()
+net.set_options("""{
+    "physics": {
+        "enabled": true,
+        "solver": "forceAtlas2Based",
+        "forceAtlas2Based": {
+            "gravitationalConstant": -200,
+            "centralGravity": 0.15,
+            "springLength": 10,
+            "springConstant": 0.2,
+            "damping": 0.9,
+            "avoidOverlap": 1
+        },
+        "stabilization": {
+            "enabled": true,
+            "iterations": 1000,
+            "updateInterval": 25,
+            "fit": true
+        },
+        "minVelocity": 0.75,
+        "maxVelocity": 30
+    }
+}""")
 
 # Word Freq Visualization ---------------------------------------------------------------------------
 def visualizeWordFreqData(threshold: int, doc_lt: dict, spellcheck_lvl: int):
@@ -132,31 +166,6 @@ def visualizeWordFreqData(threshold: int, doc_lt: dict, spellcheck_lvl: int):
     
     print("\tExecution time: ", time.time() - timer, " seconds")
 
-    # Display Frequencies on PyVis HTML Graph
-    net = Network()
-    net.set_options("""{
-        "physics": {
-            "enabled": true,
-            "solver": "forceAtlas2Based",
-            "forceAtlas2Based": {
-                "gravitationalConstant": -200,
-                "centralGravity": 0.15,
-                "springLength": 10,
-                "springConstant": 0.2,
-                "damping": 0.9,
-                "avoidOverlap": 1
-            },
-            "stabilization": {
-                "enabled": true,
-                "iterations": 1000,
-                "updateInterval": 25,
-                "fit": true
-            },
-            "minVelocity": 0.75,
-            "maxVelocity": 30
-        }
-    }""")
-
     # Create Visual Graph
     timer = time.time()
 
@@ -167,7 +176,7 @@ def visualizeWordFreqData(threshold: int, doc_lt: dict, spellcheck_lvl: int):
             # Add Node to diagram
             net.add_node(
                 word, 
-                size=min(word_freq / 2, 30), 
+                size=max(min(word_freq / 2, 30), 3), 
                 # color= f"#{colorcode_dict[stemmed_word]}", 
                 label=f"{word}\n({word_freq})",
                 group=_group
@@ -183,11 +192,75 @@ def visualizeWordFreqData(threshold: int, doc_lt: dict, spellcheck_lvl: int):
     
     print("\tExecution time: ", time.time() - timer, " seconds")
 
-    print("Done!")
+    print("Done! Look for word_freq_diagram.html")
     net.save_graph('word_freq_diagram.html')
 
-def visualizeClusterCompData():
+def visualizeClusterCompData(min_threshold: int, max_threshold: int):
+    timer = 0
+
+    # Merge pickled information into one list
+    timer = time.time()
+
+    directory = './connected_comps_pickles'
+    final_ls = []
+    for filename in tqdm(os.scandir(directory), desc="Compiling cluster list from data: "):
+        ls = pd.read_pickle(os.path.join(filename))
+
+        for i in ls:
+            if len(i) >= min_threshold and len(i) <= max_threshold:
+                final_ls.append(i)
+
+    print("\tExecution time: ", time.time() - timer, " seconds")
+
+    # Generate Graph
+    timer = time.time()
+
+    word_set = nltk_words.words()
+
+    for ls in tqdm(final_ls, desc="Generating Graph & Pairing words"):
+        # Edge case in case there's only one word
+        if len(ls) <= 1:
+            net.add_node(
+                word, 
+                size=2,  
+                label=f"{word}",
+                group=word
+                )
+            continue
+
+        # Identify Correct Word to link the words to, or at least the closest
+        correct_word = ls[0]
+
+        for word in ls: 
+            if word in word_set:
+                correct_word = word
+                break
+
+        net.add_node(
+            correct_word, 
+            size=5, 
+            label=f"{word}",
+            group=correct_word
+            )
+        
+        for word in ls: 
+            if word != correct_word:
+                net.add_node(
+                    word, 
+                    size=2, 
+                    label=f"{word}",
+                    group=correct_word
+                    )
     
+                net.add_edge(
+                    word,
+                    correct_word,
+                    width=0
+                )
+
+    print("\tExecution time: ", time.time() - timer, " seconds")
+
+    print("Done! Look for cluster_comp_diagram.html")
     net.save_graph('cluster_comp_diagram.html')
 
 main()
