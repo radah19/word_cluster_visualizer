@@ -3,3 +3,4 @@ __pycache__
 lib
 word_freq_diagram.html
 cluster_comp_diagram.html
+cluster_comp_freq_diagram.html

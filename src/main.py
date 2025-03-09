@@ -59,7 +59,28 @@ def main():
                 visualizeClusterCompData(min_threshold, max_threshold)
 
             case "3": # Word Cluster w/ Frequency Visualizer
-                print("N/A")
+                freq_threshold = int(input("Enter threshold value to filter by as number: "))
+
+                docsize_choice = input("Choose a document size to look through: \n\t- vs (Very Small)\n\t- sm (Small)\n\t- lg (Large)\nex usage: \'sm\'\n")
+                doc_choice = None
+
+                match docsize_choice:
+                    case "vs":
+                        doc_choice = vs_doc_lt
+                    case "sm":
+                        doc_choice = sm_doc_lt
+                    case "lg":
+                        doc_choice = lg_doc_lt
+                    case _:
+                        print("Size not found")
+                        choice = -1
+                        return
+                
+                min_cluster_threshold = -1 # int(input("Enter minimum threshold value (clusters with less words than this threshold are not included): "))
+                max_cluster_threshold = 100 # int(input("Enter maximum threshold value (clusters with more words than this threshold are not included) (-1 for none): "))
+                
+                print("Freq. Threshold: ", freq_threshold, " | Doc Size: ", docsize_choice, " | Min Cluster Threshold: ", min_cluster_threshold, " | Max Cluster Threshold: ", max_cluster_threshold)
+                visualizeClusterCompFreqData(freq_threshold, doc_choice, min_cluster_threshold, max_cluster_threshold)
 
             case "4": # Quit
                 print("Quitting app")
@@ -241,7 +262,7 @@ def visualizeClusterCompData(min_threshold: int, max_threshold: int):
             size=5, 
             label=f"{word}",
             group=correct_word
-            )
+        )
         
         for word in ls: 
             if word != correct_word:
@@ -250,7 +271,7 @@ def visualizeClusterCompData(min_threshold: int, max_threshold: int):
                     size=2, 
                     label=f"{word}",
                     group=correct_word
-                    )
+                )
     
                 net.add_edge(
                     word,
@@ -262,5 +283,106 @@ def visualizeClusterCompData(min_threshold: int, max_threshold: int):
 
     print("Done! Look for cluster_comp_diagram.html")
     net.save_graph('cluster_comp_diagram.html')
+
+def visualizeClusterCompFreqData(freq_threshold: int, doc_lt: dict, min_cluster_threshold: int, max_cluster_threshold: int):
+    timer = 0
+
+    # Count Word Frequencies, then filter words not meeting a threshold
+    all_words_freqs = {}
+    timer = time.time()
+    for doc, doc_val in tqdm(doc_lt.items(), desc="Counting Frequencies of all Words across documents".ljust(65)):
+        for word in doc_val:
+            # Prevent Nulls from being added
+            if word == None:
+                continue       
+
+            # Count up times used across documents
+            if word not in all_words_freqs:
+                all_words_freqs[word] = 0
+            all_words_freqs[word] += 1
+    print("\tExecution time: ", time.time() - timer, " seconds")
+
+    # Filter by Threshold Value
+    timer = time.time()
+    word_freqs = {}
+    for word, word_freq in tqdm(all_words_freqs.items(), desc="Filtering words with frequencies below threshold".ljust(65)):
+        if word_freq >= freq_threshold:
+            word_freqs[word] = word_freq
+    print("\tExecution time: ", time.time() - timer, " seconds")
+
+    # Merge pickled information into one list
+    timer = time.time()
+    directory = './connected_comps_pickles'
+    full_cluster_ls = []
+    for filename in tqdm(os.scandir(directory), desc="Compiling cluster list from data: "):
+        ls = pd.read_pickle(os.path.join(filename))
+
+        for i in ls:
+            if len(i) >= min_cluster_threshold and (max_cluster_threshold == -1 or len(i) <= max_cluster_threshold):
+                full_cluster_ls.append(i)
+    print("\tExecution time: ", time.time() - timer, " seconds")
+
+    # Filter by Words with recorded word frequencies
+    timer = time.time()
+    final_cluster_ls = []
+    for ls in tqdm(full_cluster_ls, desc="Culling clusters with low frequencies: "):
+        # Remove words from each list that did not meet the word frequency threshold
+        for word in ls[:]: # Iterate through copy of list
+            if word not in word_freqs:
+                ls.remove(word)
+        # If every word met requirements, then yay!
+        if len(ls) > 0:
+            final_cluster_ls.append(ls)
+    print("\tExecution time: ", time.time() - timer, " seconds")
+
+    # Now Perform Clustering Algorithm & Generate Graph
+    timer = time.time()
+    word_set = nltk_words.words()
+
+    for ls in tqdm(final_cluster_ls, desc="Generating Graph & Pairing words"):
+        print(ls)
+        # Edge case in case there's only one word
+        if len(ls) <= 1:
+            net.add_node(
+                word, 
+                size=2,  
+                label=f"{word}\n({word_freqs[word]})",
+                group=word
+                )
+            continue
+
+        # Identify Correct Word to link the words to, or at least the closest
+        correct_word = ls[0]
+
+        for word in ls: 
+            if word in word_set:
+                correct_word = word
+                break
+
+        net.add_node(
+            correct_word, 
+            size=5, 
+            label=f"{correct_word}\n({word_freqs[correct_word]})",
+            group=correct_word
+            )
+        
+        for word in ls: 
+            if word != correct_word:
+                net.add_node(
+                    word, 
+                    size=2, 
+                    label=f"{word}\n({word_freqs[word]})",
+                    group=correct_word
+                )
+    
+                net.add_edge(
+                    word,
+                    correct_word,
+                    width=0
+                )
+    print("\tExecution time: ", time.time() - timer, " seconds")
+
+    print("Done! Look for cluster_comp_freq_diagram.html")
+    net.save_graph('cluster_comp_freq_diagram.html')
 
 main()
