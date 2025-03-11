@@ -76,8 +76,8 @@ def main():
                         choice = -1
                         return
                 
-                min_cluster_threshold = -1 # int(input("Enter minimum threshold value (clusters with less words than this threshold are not included): "))
-                max_cluster_threshold = 100 # int(input("Enter maximum threshold value (clusters with more words than this threshold are not included) (-1 for none): "))
+                min_cluster_threshold = int(input("Enter minimum threshold value (clusters with less words than this threshold are not included): "))
+                max_cluster_threshold = int(input("Enter maximum threshold value (clusters with more words than this threshold are not included) (-1 for none): "))
                 
                 print("Freq. Threshold: ", freq_threshold, " | Doc Size: ", docsize_choice, " | Min Cluster Threshold: ", min_cluster_threshold, " | Max Cluster Threshold: ", max_cluster_threshold)
                 visualizeClusterCompFreqData(freq_threshold, doc_choice, min_cluster_threshold, max_cluster_threshold)
@@ -322,6 +322,11 @@ def visualizeClusterCompFreqData(freq_threshold: int, doc_lt: dict, min_cluster_
                 full_cluster_ls.append(i)
     print("\tExecution time: ", time.time() - timer, " seconds")
 
+    # Record full_cluster_ls for debugging
+    # bf = open('full_cluster_ls', 'wb')
+    # bf.write(str(full_cluster_ls).encode('utf8'))
+    # bf.close()
+
     # Filter by Words with recorded word frequencies
     timer = time.time()
     final_cluster_ls = []
@@ -331,22 +336,27 @@ def visualizeClusterCompFreqData(freq_threshold: int, doc_lt: dict, min_cluster_
             if word not in word_freqs:
                 ls.remove(word)
         # If every word met requirements, then yay!
-        if len(ls) > 0:
+        if len(ls) > 1:
             final_cluster_ls.append(ls)
     print("\tExecution time: ", time.time() - timer, " seconds")
+
+    # Record final_cluster_ls for debugging
+    # f = open('final_cluster_ls', 'wb')
+    # f.write(str(final_cluster_ls).encode('utf8'))
+    # f.close()
 
     # Now Perform Clustering Algorithm & Generate Graph
     timer = time.time()
     word_set = nltk_words.words()
 
     for ls in tqdm(final_cluster_ls, desc="Generating Graph & Pairing words"):
-        print(ls)
+        # print("List I'm looking at !! ", ls)
         # Edge case in case there's only one word
         if len(ls) <= 1:
             net.add_node(
                 word, 
                 size=2,  
-                label=f"{word}\n({word_freqs[word]})",
+                label=f"{word}\n({word_freqs[word] if word in word_freqs else 'BROKEN'})",
                 group=word
                 )
             continue
@@ -362,7 +372,7 @@ def visualizeClusterCompFreqData(freq_threshold: int, doc_lt: dict, min_cluster_
         net.add_node(
             correct_word, 
             size=5, 
-            label=f"{correct_word}\n({word_freqs[correct_word]})",
+            label=f"{correct_word}\n({word_freqs[correct_word] if correct_word in word_freqs else 'BROKEN'})",
             group=correct_word
             )
         
@@ -371,7 +381,7 @@ def visualizeClusterCompFreqData(freq_threshold: int, doc_lt: dict, min_cluster_
                 net.add_node(
                     word, 
                     size=2, 
-                    label=f"{word}\n({word_freqs[word]})",
+                    label=f"{word}\n({word_freqs[word] if word in word_freqs else 'BROKEN'})",
                     group=correct_word
                 )
     
