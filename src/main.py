@@ -12,6 +12,13 @@ from nltk.corpus import words as nltk_words
 
 def main():
     choice = -1
+    cluster_distances = [
+        0.04, 0.059, 0.095, 0.136, 0.188, 0.231, 0.043, 0.062, 
+        0.1, 0.143, 0.19, 0.235, 0.045, 0.067, 0.105, 0.154, 
+        0.2, 0.238, 0.048, 0.071, 0.111, 0.158, 0.211, 0.241, 
+        0.05, 0.077, 0.118, 0.167, 0.214, 0.25, 0.053, 0.083, 
+        0.125, 0.176, 0.222, 0.056, 0.091, 0.133, 0.182, 0.227
+    ]
 
     while choice == -1:
         print("\nChoose an algorithm to run: \n\t1 - Word Frequency Visualizer \n\t2 - Word Cluster Visualizer \n\t3 - Word Cluster w/ Frequency Visualizer \n\t4 - Quit \nex usage: \'1\'\n")
@@ -54,9 +61,18 @@ def main():
                 visualizeWordFreqData(threshold, doc_choice, spellcheck_lvl)
 
             case "2": # Word Cluster Visualizer
-                min_threshold = int(input("Enter minimum threshold value (clusters with less words than this threshold are not included): "))
-                max_threshold = int(input("Enter maximum threshold value (clusters with more words than this threshold are not included): "))
-                visualizeClusterCompData(min_threshold, max_threshold)
+                distance = -1
+                while(distance == -1):
+                    new_dist = float(input(f"Choose a Distance Value for Clustering Algorithm Data | Selectable Distances:\n{cluster_distances}:\n"))
+
+                    if new_dist not in cluster_distances:
+                        print("Invalid Distance :(")
+                    else:
+                        distance = new_dist
+                
+                min_threshold = int(input("Enter minimum threshold value (clusters with less words than this threshold are not included) (-1 for none): "))
+                max_threshold = int(input("Enter maximum threshold value (clusters with more words than this threshold are not included) (-1 for none): "))
+                visualizeClusterCompData(distance, min_threshold, max_threshold)
 
             case "3": # Word Cluster w/ Frequency Visualizer
                 freq_threshold = int(input("Enter threshold value to filter by as number: "))
@@ -76,7 +92,7 @@ def main():
                         choice = -1
                         return
                 
-                min_cluster_threshold = int(input("Enter minimum threshold value (clusters with less words than this threshold are not included): "))
+                min_cluster_threshold = int(input("Enter minimum threshold value (clusters with less words than this threshold are not included) (-1 for none): "))
                 max_cluster_threshold = int(input("Enter maximum threshold value (clusters with more words than this threshold are not included) (-1 for none): "))
                 
                 print("Freq. Threshold: ", freq_threshold, " | Doc Size: ", docsize_choice, " | Min Cluster Threshold: ", min_cluster_threshold, " | Max Cluster Threshold: ", max_cluster_threshold)
@@ -213,39 +229,41 @@ def visualizeWordFreqData(threshold: int, doc_lt: dict, spellcheck_lvl: int):
     
     print("\tExecution time: ", time.time() - timer, " seconds")
 
-    print("Done! Look for word_freq_diagram.html")
-    net.save_graph('word_freq_diagram.html')
+    print("Done! Look for outputs/word_freq_diagram.html")
+    net.save_graph('outputs/word_freq_diagram.html')
 
-def visualizeClusterCompData(min_threshold: int, max_threshold: int):
+def visualizeClusterCompData(distance: float, min_threshold: int, max_threshold: int):
     timer = 0
+    initial_ls = pd.read_pickle(f'./connected_comps_pickles/connected_comps_{distance}')
+    cluster_ls = []
 
-    # Merge pickled information into one list
-    timer = time.time()
+    # Filter Cluster Comp List by thresholds
+    if min_threshold != -1 or max_threshold != -1:
+        timer = time.time()
+        for ls in tqdm(initial_ls, desc="Compiling cluster list from data: "):
+            if len(ls) >= min_threshold and (max_threshold == -1 or len(ls) <= max_threshold):
+                cluster_ls.append(ls)
+        print("\tExecution time: ", time.time() - timer, " seconds")
+    else:
+        cluster_ls = initial_ls
 
-    directory = './connected_comps_pickles'
-    final_ls = []
-    for filename in tqdm(os.scandir(directory), desc="Compiling cluster list from data: "):
-        ls = pd.read_pickle(os.path.join(filename))
-
-        for i in ls:
-            if len(i) >= min_threshold and len(i) <= max_threshold:
-                final_ls.append(i)
-
-    print("\tExecution time: ", time.time() - timer, " seconds")
+    # Record full_cluster_ls for debugging
+    f = open('outputs/cluster_ls', 'wb')
+    f.write(str(cluster_ls).encode('utf8'))
+    f.close()
 
     # Generate Graph
     timer = time.time()
-
     word_set = nltk_words.words()
 
-    for ls in tqdm(final_ls, desc="Generating Graph & Pairing words"):
+    for ls in tqdm(cluster_ls, desc="Generating Graph & Pairing words"):
         # Edge case in case there's only one word
         if len(ls) <= 1:
             net.add_node(
-                word, 
+                ls[0], 
                 size=2,  
-                label=f"{word}",
-                group=word
+                label=f"{ls[0]}",
+                group=ls[0]
                 )
             continue
 
@@ -281,8 +299,8 @@ def visualizeClusterCompData(min_threshold: int, max_threshold: int):
 
     print("\tExecution time: ", time.time() - timer, " seconds")
 
-    print("Done! Look for cluster_comp_diagram.html")
-    net.save_graph('cluster_comp_diagram.html')
+    print(f"Done! Look for outputs/cluster_comp_diagram_{distance}_{min_threshold}_{max_threshold}.html")
+    net.save_graph(f'outputs/cluster_comp_diagram_{distance}_{min_threshold}_{max_threshold}.html')
 
 def visualizeClusterCompFreqData(freq_threshold: int, doc_lt: dict, min_cluster_threshold: int, max_cluster_threshold: int):
     timer = 0
@@ -323,9 +341,9 @@ def visualizeClusterCompFreqData(freq_threshold: int, doc_lt: dict, min_cluster_
     print("\tExecution time: ", time.time() - timer, " seconds")
 
     # Record full_cluster_ls for debugging
-    # bf = open('full_cluster_ls', 'wb')
-    # bf.write(str(full_cluster_ls).encode('utf8'))
-    # bf.close()
+    # f = open('outputs/full_cluster_ls', 'wb')
+    # f.write(str(full_cluster_ls).encode('utf8'))
+    # f.close()
 
     # Filter by Words with recorded word frequencies
     timer = time.time()
@@ -341,7 +359,7 @@ def visualizeClusterCompFreqData(freq_threshold: int, doc_lt: dict, min_cluster_
     print("\tExecution time: ", time.time() - timer, " seconds")
 
     # Record final_cluster_ls for debugging
-    # f = open('final_cluster_ls', 'wb')
+    # f = open('outputs/final_cluster_ls', 'wb')
     # f.write(str(final_cluster_ls).encode('utf8'))
     # f.close()
 
@@ -392,7 +410,7 @@ def visualizeClusterCompFreqData(freq_threshold: int, doc_lt: dict, min_cluster_
                 )
     print("\tExecution time: ", time.time() - timer, " seconds")
 
-    print("Done! Look for cluster_comp_freq_diagram.html")
-    net.save_graph('cluster_comp_freq_diagram.html')
+    print("Done! Look for outputs/cluster_comp_freq_diagram.html")
+    net.save_graph('outputs/cluster_comp_freq_diagram.html')
 
 main()
