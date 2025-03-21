@@ -9,3 +9,6 @@ source ./venv/bin/activate
 
 # Install dependencies for server
 python -m pip install -r requirements.txt
+
+# Create Necessary Directories
+mkdir cluster_visualizations
