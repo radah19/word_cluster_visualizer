@@ -3,7 +3,6 @@ import pandas as pd
 from pyvis.network import Network
 import random
 from spellchecker import SpellChecker
-from affixspellchecker import AffixSpellChecker
 import time
 from tqdm import tqdm
 import nltk
@@ -43,7 +42,7 @@ def main():
                         choice = -1
                         return
                 
-                spellcheck_lvl = input("Enter the associated value of type of spellchecker to use: \n\t1 - pyspellchecker with Distance=1 (Fast)\n\t2 - pyspellchecker with Distance=2 (Precise)\n\t3 - AffixSpellChecker (Prioritizes Affixes)\n")
+                spellcheck_lvl = input("Enter the associated value of type of spellchecker to use: \n\t1 - pyspellchecker with Distance=1 (Fast)\n\t2 - pyspellchecker with Distance=2 (Precise)\n")
                 spellchecker_choice = None
 
                 match spellcheck_lvl:
@@ -51,8 +50,6 @@ def main():
                         spellchecker_choice = "Peter Norvig Spellchecker - Distance = 1"
                     case "2":
                         spellchecker_choice = "Peter Norvig Spellchecker - Distance = 2"
-                    case "3":
-                        spellchecker_choice = "Affix Spellchecker"
                     case _:
                         print("Invalid Value")
                         choice = -1
@@ -186,10 +183,8 @@ def visualizeWordFreqData(threshold: int, doc_lt: dict, spellcheck_lvl: int):
     spell = None
     if spellcheck_lvl == 1:
         spell = SpellChecker(distance=1)
-    elif spellcheck_lvl == 2:
-        spell = SpellChecker()
     else:
-        spell = AffixSpellChecker()
+        spell = SpellChecker()
 
     timer = time.time()
 
@@ -237,7 +232,7 @@ def visualizeWordFreqData(threshold: int, doc_lt: dict, spellcheck_lvl: int):
     print("\tExecution time: ", time.time() - timer, " seconds")
 
     print("Done! Look for cluster_visualizations/word_freq_diagram.html")
-    net.save_graph('cluster_visualizations/word_freq_diagram.html')
+    net.save_graph('../cluster_visualizations/word_freq_diagram.html')
 
 def visualizeClusterCompData(distance: float, min_threshold: int, max_threshold: int):
     timer = 0
@@ -302,7 +297,7 @@ def visualizeClusterCompData(distance: float, min_threshold: int, max_threshold:
     print("\tExecution time: ", time.time() - timer, " seconds")
 
     print(f"Done! Look for cluster_visualizations/cluster_comp_diagram_{distance}_{min_threshold}_{max_threshold}.html")
-    net.save_graph(f'cluster_visualizations/cluster_comp_diagram_{distance}_{min_threshold}_{max_threshold}.html')
+    net.save_graph(f'../cluster_visualizations/cluster_comp_diagram_{distance}_{min_threshold}_{max_threshold}.html')
 
 def visualizeClusterCompFreqData(distance: float, freq_threshold: int, doc_lt: dict, min_cluster_threshold: int, max_cluster_threshold: int):
     timer = 0
@@ -405,6 +400,6 @@ def visualizeClusterCompFreqData(distance: float, freq_threshold: int, doc_lt: d
     print("\tExecution time: ", time.time() - timer, " seconds")
 
     print(f"Done! Look for cluster_visualizations/cluster_comp_freq_diagram_{distance}_{freq_threshold}_{min_cluster_threshold}_{max_cluster_threshold}.html")
-    net.save_graph(f'cluster_visualizations/cluster_comp_freq_diagram_{distance}_{freq_threshold}_{min_cluster_threshold}_{max_cluster_threshold}.html')
+    net.save_graph(f'../cluster_visualizations/cluster_comp_freq_diagram_{distance}_{freq_threshold}_{min_cluster_threshold}_{max_cluster_threshold}.html')
 
 main()
