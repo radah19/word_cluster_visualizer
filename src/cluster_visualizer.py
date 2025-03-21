@@ -236,12 +236,12 @@ def visualizeWordFreqData(threshold: int, doc_lt: dict, spellcheck_lvl: int):
     
     print("\tExecution time: ", time.time() - timer, " seconds")
 
-    print("Done! Look for outputs/word_freq_diagram.html")
-    net.save_graph('outputs/word_freq_diagram.html')
+    print("Done! Look for cluster_visualizations/word_freq_diagram.html")
+    net.save_graph('cluster_visualizations/word_freq_diagram.html')
 
 def visualizeClusterCompData(distance: float, min_threshold: int, max_threshold: int):
     timer = 0
-    initial_ls = pd.read_pickle(f'./connected_comps_pickles/connected_comps_{distance}')
+    initial_ls = pd.read_pickle(f'./pickles/connected_comps_{distance}')
     cluster_ls = []
 
     # Filter Cluster Comp List by thresholds
@@ -301,8 +301,8 @@ def visualizeClusterCompData(distance: float, min_threshold: int, max_threshold:
 
     print("\tExecution time: ", time.time() - timer, " seconds")
 
-    print(f"Done! Look for outputs/cluster_comp_diagram_{distance}_{min_threshold}_{max_threshold}.html")
-    net.save_graph(f'outputs/cluster_comp_diagram_{distance}_{min_threshold}_{max_threshold}.html')
+    print(f"Done! Look for cluster_visualizations/cluster_comp_diagram_{distance}_{min_threshold}_{max_threshold}.html")
+    net.save_graph(f'cluster_visualizations/cluster_comp_diagram_{distance}_{min_threshold}_{max_threshold}.html')
 
 def visualizeClusterCompFreqData(distance: float, freq_threshold: int, doc_lt: dict, min_cluster_threshold: int, max_cluster_threshold: int):
     timer = 0
@@ -331,7 +331,7 @@ def visualizeClusterCompFreqData(distance: float, freq_threshold: int, doc_lt: d
     print("\tExecution time: ", time.time() - timer, " seconds")
 
     # Merge pickled information into one list
-    initial_ls = pd.read_pickle(f'./connected_comps_pickles/connected_comps_{distance}')
+    initial_ls = pd.read_pickle(f'./pickles/connected_comps_{distance}')
     full_cluster_ls = []
 
     # Filter Cluster Comp List by thresholds
@@ -404,7 +404,7 @@ def visualizeClusterCompFreqData(distance: float, freq_threshold: int, doc_lt: d
                 )
     print("\tExecution time: ", time.time() - timer, " seconds")
 
-    print(f"Done! Look for outputs/cluster_comp_freq_diagram_{distance}_{freq_threshold}_{min_cluster_threshold}_{max_cluster_threshold}.html")
-    net.save_graph(f'outputs/cluster_comp_freq_diagram_{distance}_{freq_threshold}_{min_cluster_threshold}_{max_cluster_threshold}.html')
+    print(f"Done! Look for cluster_visualizations/cluster_comp_freq_diagram_{distance}_{freq_threshold}_{min_cluster_threshold}_{max_cluster_threshold}.html")
+    net.save_graph(f'cluster_visualizations/cluster_comp_freq_diagram_{distance}_{freq_threshold}_{min_cluster_threshold}_{max_cluster_threshold}.html')
 
 main()
