@@ -1,7 +1,5 @@
-import os
 import pandas as pd
 from pyvis.network import Network
-import random
 from spellchecker import SpellChecker
 from affixspellchecker import AffixSpellChecker
 import time
@@ -9,20 +7,15 @@ from tqdm import tqdm
 import nltk
 nltk.download('words')
 from nltk.corpus import words as nltk_words
+import matplotlib.pyplot as plt
+import numpy as np
 
 def main():
     choice = -1
-    cluster_distances = [
-        0.04, 0.059, 0.095, 0.136, 0.188, 0.231, 0.043, 0.062, 
-        0.1, 0.143, 0.19, 0.235, 0.045, 0.067, 0.105, 0.154, 
-        0.2, 0.238, 0.048, 0.071, 0.111, 0.158, 0.211, 0.241, 
-        0.05, 0.077, 0.118, 0.167, 0.214, 0.25, 0.053, 0.083, 
-        0.125, 0.176, 0.222, 0.056, 0.091, 0.133, 0.182, 0.227
-    ]
     cluster_distances.sort()
 
     while choice == -1:
-        print("\nChoose an algorithm to run: \n\t1 - Word Frequency Visualizer \n\t2 - Word Cluster Visualizer \n\t3 - Word Cluster w/ Frequency Visualizer \n\t4 - Quit \nex usage: \'1\'\n")
+        print("\nChoose an algorithm to run: \n\t1 - Word Frequency Visualizer \n\t2 - Word Cluster Visualizer \n\t3 - Word Cluster w/ Frequency Visualizer \n\t4 - Analyze Current Cluster Data \n\t5 - Sandbox \n\t6 - Quit \nex usage: \'1\'\n")
         choice = input()
         match choice:
             case "1": # Word Frequency Visualizer
@@ -59,7 +52,7 @@ def main():
                         return
              
                 print("Threshold: ", threshold, " | Document Size: ", docsize_choice, " | Spellchecker: ", spellchecker_choice)
-                visualizeWordFreqData(threshold, doc_choice, spellcheck_lvl)
+                visualizeWordFreqData(threshold, doc_choice, docsize_choice, spellcheck_lvl)
 
             case "2": # Word Cluster Visualizer
                 distance = -1
@@ -108,7 +101,25 @@ def main():
                 print(f"Distance: {distance} | Freq. Threshold: {freq_threshold} | Doc Size: {docsize_choice} | Min Cluster Threshold: {min_cluster_threshold} | Max Cluster Threshold: {max_cluster_threshold}")
                 visualizeClusterCompFreqData(distance, freq_threshold, doc_choice, min_cluster_threshold, max_cluster_threshold)
 
-            case "4": # Quit
+            case "4": # Analyze Cluster Comp Distance Accuracy
+                analyzeClusterCompData()
+
+            case "5": # Sandbox
+                for d in cluster_distances:
+                    if d <= 0.077: 
+                        visualizeClusterCompData(d, 2, 25)
+                    elif d <= 0.154:
+                        visualizeClusterCompData(d, 3, 25)
+                    elif d <= 0.167:
+                        visualizeClusterCompData(d, 4, 25)
+                    elif d <= 0.188:
+                        visualizeClusterCompData(d, 5, 25)
+                    elif d <= 0.222:
+                        visualizeClusterCompData(d, 7, 20)
+                    else:
+                        visualizeClusterCompData(d, 8, 20)
+
+            case "6": # Quit
                 print("Quitting app")
 
             case _:
@@ -123,33 +134,25 @@ lg_doc_lt = pd.read_pickle('./pickles/doc_lookup_table')
 sm_doc_lt = pd.read_pickle('./pickles/sm_doc_lookup_table')
 vs_doc_lt = pd.read_pickle('./pickles/vs_doc_lookup_table')
 
-# Display Frequencies on PyVis HTML Graph
-net = Network()
-net.set_options("""{
-    "physics": {
-        "enabled": true,
-        "solver": "forceAtlas2Based",
-        "forceAtlas2Based": {
-            "gravitationalConstant": -200,
-            "centralGravity": 0.15,
-            "springLength": 10,
-            "springConstant": 0.2,
-            "damping": 0.9,
-            "avoidOverlap": 1
-        },
-        "stabilization": {
-            "enabled": true,
-            "iterations": 1000,
-            "updateInterval": 25,
-            "fit": true
-        },
-        "minVelocity": 0.75,
-        "maxVelocity": 30
-    }
-}""")
+cluster_distances = [
+    0.04, 0.059, 0.095, 0.136, 0.188, 0.231, 0.043, 0.062, 
+    0.1, 0.143, 0.19, 0.235, 0.045, 0.067, 0.105, 0.154, 
+    0.2, 0.238, 0.048, 0.071, 0.111, 0.158, 0.211, 0.241, 
+    0.05, 0.077, 0.118, 0.167, 0.214, 0.25, 0.053, 0.083, 
+    0.125, 0.176, 0.222, 0.056, 0.091, 0.133, 0.182, 0.227
+]
 
-# Word Freq Visualization ---------------------------------------------------------------------------
-def visualizeWordFreqData(threshold: int, doc_lt: dict, spellcheck_lvl: int):
+# Display Frequencies on PyVis HTML Graph
+net = Network(select_menu=True, cdn_resources='remote')
+net.show_buttons(filter_=['physics'])
+
+''' Word Frequency Visualization
+
+Given a threshold size and a size set for the document list to analyze, generates associations based off
+levensthein distances between words available in the corpus
+
+'''
+def visualizeWordFreqData(threshold: int, doc_lt: dict, docsize_choice: str, spellcheck_lvl: int):
     timer = 0
 
     # Count Word Frequencies, then filter words not meeting a threshold
@@ -236,8 +239,7 @@ def visualizeWordFreqData(threshold: int, doc_lt: dict, spellcheck_lvl: int):
     
     print("\tExecution time: ", time.time() - timer, " seconds")
 
-    print("Done! Look for cluster_visualizations/word_freq_diagram.html")
-    net.save_graph('cluster_visualizations/word_freq_diagram.html')
+    pyvisSaveGraph(f"word_freq_diagram_{threshold}_{docsize_choice}_{spellcheck_lvl}")
 
 def visualizeClusterCompData(distance: float, min_threshold: int, max_threshold: int):
     timer = 0
@@ -279,8 +281,8 @@ def visualizeClusterCompData(distance: float, min_threshold: int, max_threshold:
 
         net.add_node(
             correct_word, 
-            size=5, 
-            label=f"{word}",
+            size=9, 
+            label=f"{correct_word}",
             group=correct_word
         )
         
@@ -288,7 +290,7 @@ def visualizeClusterCompData(distance: float, min_threshold: int, max_threshold:
             if word != correct_word:
                 net.add_node(
                     word, 
-                    size=2, 
+                    size=6, 
                     label=f"{word}",
                     group=correct_word
                 )
@@ -301,8 +303,7 @@ def visualizeClusterCompData(distance: float, min_threshold: int, max_threshold:
 
     print("\tExecution time: ", time.time() - timer, " seconds")
 
-    print(f"Done! Look for cluster_visualizations/cluster_comp_diagram_{distance}_{min_threshold}_{max_threshold}.html")
-    net.save_graph(f'cluster_visualizations/cluster_comp_diagram_{distance}_{min_threshold}_{max_threshold}.html')
+    pyvisSaveGraph(f"cluster_comp_diagram_{distance}_{min_threshold}_{max_threshold}")
 
 def visualizeClusterCompFreqData(distance: float, freq_threshold: int, doc_lt: dict, min_cluster_threshold: int, max_cluster_threshold: int):
     timer = 0
@@ -404,7 +405,26 @@ def visualizeClusterCompFreqData(distance: float, freq_threshold: int, doc_lt: d
                 )
     print("\tExecution time: ", time.time() - timer, " seconds")
 
-    print(f"Done! Look for cluster_visualizations/cluster_comp_freq_diagram_{distance}_{freq_threshold}_{min_cluster_threshold}_{max_cluster_threshold}.html")
-    net.save_graph(f'cluster_visualizations/cluster_comp_freq_diagram_{distance}_{freq_threshold}_{min_cluster_threshold}_{max_cluster_threshold}.html')
+    pyvisSaveGraph(f"cluster_comp_freq_diagram_{distance}_{freq_threshold}_{min_cluster_threshold}_{max_cluster_threshold}")
+
+def pyvisSaveGraph(name: str):
+    html = net.generate_html()
+    with open(f"cluster_visualizations/{name}.html", mode='w', encoding='utf-8') as fp:
+        fp.write(html)
+    print(f"Done! Look for cluster_visualizations/{name}.html")
+
+def analyzeClusterCompData():
+    spell = SpellChecker()
+
+    for dist_val in cluster_distances:
+        cluster_ls = pd.read_pickle(f'./pickles/connected_comps_{dist_val}')
+
+        for cluster in tqdm(cluster_ls, desc=f"Processing cluster accuracy at distance of {dist_val}: ".ljust(30)):
+            for i in len(cluster):
+                cluster[i] = spell.correction(cluster[i])
+            
+            correctPercent = 0
+
+                
 
 main()
