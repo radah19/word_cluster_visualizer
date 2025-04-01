@@ -9,13 +9,20 @@ nltk.download('words')
 from nltk.corpus import words as nltk_words
 import matplotlib.pyplot as plt
 import numpy as np
+from playwright.sync_api import sync_playwright
 
 def main():
     choice = -1
     cluster_distances.sort()
 
     while choice == -1:
-        print("\nChoose an algorithm to run: \n\t1 - Word Frequency Visualizer \n\t2 - Word Cluster Visualizer \n\t3 - Word Cluster w/ Frequency Visualizer \n\t4 - Analyze Current Cluster Data \n\t5 - Sandbox \n\t6 - Quit \nex usage: \'1\'\n")
+        print("\nChoose an algorithm to run: "
+                "\n\t1 - Word Frequency Visualizer "
+                "\n\t2 - Word Cluster Visualizer "
+                "\n\t3 - Word Cluster w/ Frequency Visualizer "
+                "\n\t4 - Sandbox "
+                "\n\t5 - Quit \nex usage: \'1\'\n")
+
         choice = input()
         match choice:
             case "1": # Word Frequency Visualizer
@@ -101,10 +108,7 @@ def main():
                 print(f"Distance: {distance} | Freq. Threshold: {freq_threshold} | Doc Size: {docsize_choice} | Min Cluster Threshold: {min_cluster_threshold} | Max Cluster Threshold: {max_cluster_threshold}")
                 visualizeClusterCompFreqData(distance, freq_threshold, doc_choice, min_cluster_threshold, max_cluster_threshold)
 
-            case "4": # Analyze Cluster Comp Distance Accuracy
-                analyzeClusterCompData()
-
-            case "5": # Sandbox
+            case "4": # Sandbox
                 for d in cluster_distances:
                     if d <= 0.077: 
                         visualizeClusterCompData(d, 2, 25)
@@ -119,7 +123,7 @@ def main():
                     else:
                         visualizeClusterCompData(d, 8, 20)
 
-            case "6": # Quit
+            case "5": # Quit
                 print("Quitting app")
 
             case _:
@@ -142,10 +146,41 @@ cluster_distances = [
     0.125, 0.176, 0.222, 0.056, 0.091, 0.133, 0.182, 0.227
 ]
 
-# Display Frequencies on PyVis HTML Graph
+# Pyvis Graph Config
 net = Network(select_menu=True, cdn_resources='remote')
 net.show_buttons(filter_=['physics'])
 
+''' 
+Uncomment this network initialization to remove the select menu & physics menu
+This also enforces a default physics option of forceAtlas2Based, which usually appears
+better in the screenshotted images made by Playwright.
+I wish generating images of the PyVis graph was less like this 😔
+'''
+# net = Network()
+# net.set_options("""{
+#     "physics": {
+#         "enabled": true,
+#         "solver": "forceAtlas2Based",
+#         "forceAtlas2Based": {
+#             "gravitationalConstant": -200,
+#             "centralGravity": 0.15,
+#             "springLength": 130,
+#             "springConstant": 0.2,
+#             "damping": 0.9,
+#             "avoidOverlap": 1
+#         },
+#         "stabilization": {
+#             "enabled": true,
+#             "iterations": 1000,
+#             "updateInterval": 25,
+#             "fit": true
+#         },
+#         "minVelocity": 0.75,
+#         "maxVelocity": 30
+#     }
+# }""")
+
+# Functions -------------------------------------------------------------------------------------------
 ''' Word Frequency Visualization
 
 Given a threshold size and a size set for the document list to analyze, generates associations based off
@@ -412,6 +447,53 @@ def pyvisSaveGraph(name: str):
     with open(f"cluster_visualizations/{name}.html", mode='w', encoding='utf-8') as fp:
         fp.write(html)
     print(f"Done! Look for cluster_visualizations/{name}.html")
+
+    # Generate png of graph, comment out line in case you don't want this... this may take a while >.<
+    # pyvisGenerateScreenshot(name)
+
+def pyvisGenerateScreenshot(filename: str):
+    print(f"Saving Image of Visualization...")
+    timer = time.time()
+
+    with sync_playwright() as p:
+        for browser_type in [p.firefox]:
+            browser = browser_type.launch()
+            page = browser.new_page()
+
+            with open(f"cluster_visualizations/{filename}.html", "r") as file:
+                file_contents = file.read()
+            page.set_content(file_contents, wait_until="load", timeout=10000000000)
+
+            # Custom Javascript function to await the loading screen to finish & the network to become visible
+            # print("\tWaiting for Network to load...")
+            # page.evaluate('''
+            #     () => {
+            #         return new Promise((resolve) => {
+            #             // Check if the network graph is loaded
+            #             const checkGraphLoaded = () => {
+            #                 const networkElements = document.querySelectorAll('.vis-network');
+            #                 if (networkElements.length > 0) {
+            #                     resolve(true);
+            #                 } else {
+            #                     setTimeout(checkGraphLoaded, 500);
+            #                 }
+            #             };
+            #             checkGraphLoaded();
+            #         });
+            #     }
+            # ''')
+
+
+            # Additional Timeout after load to let physics organize nodes a bit... hopefully...
+            print("\tWaiting for a few seconds...")
+            page.wait_for_timeout(30000)
+
+            page.screenshot(path=f'cluster_visualizations/{filename}.png', full_page=True)
+            file.close()
+            browser.close()
+
+    print(f"\tDone! Look for cluster_visualizations/{filename}.png")
+    print("\tExecution time: ", time.time() - timer, " seconds")
 
 def analyzeClusterCompData():
     spell = SpellChecker()
