@@ -3,3 +3,4 @@ __pycache__
 lib
 cluster_visualizations/*
 tcp_variation_notebooks
+csvs

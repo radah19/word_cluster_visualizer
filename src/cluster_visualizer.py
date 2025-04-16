@@ -155,7 +155,6 @@ net.show_buttons(filter_=['physics'])
 Uncomment this network initialization to remove the select menu & physics menu
 This also enforces a default physics option of forceAtlas2Based, which usually appears
 better in the screenshotted images made by Playwright.
-I wish generating images of the PyVis graph was less like this 😔
 '''
 # net = Network()
 # net.set_options("""{
