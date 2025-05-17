@@ -412,15 +412,6 @@ def visualizeClusterCompFreqData(distance: float, freq_threshold: int, doc_lt: d
     pyvisSaveGraph(f"cluster_comp_freq_diagram_{distance}_{freq_threshold}_{min_cluster_threshold}_{max_cluster_threshold}")
 
 def pyvisSaveGraph(name: str):
-    # Disable Physics on Nodes
-    G = nx.random_geometric_graph(20, 0.3)
-    pos = nx.spring_layout(G, seed=42, scale=500)
-    
-    for node in net.get_nodes():
-        net.get_node(node)['x']=pos[node][0]
-        net.get_node(node)['y']=-pos[node][1] #the minus is needed here to respect networkx y-axis convention 
-        net.get_node(node)['physics']=False
-
     net.toggle_physics(False)
 
     # Generate Graph with UTF-8 Encoding
