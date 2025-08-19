@@ -1,1 +1,0 @@
-Keep this directory so for storing the PyVis graphs, as the directory must exist prior to calling the save function.
