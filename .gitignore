@@ -4,3 +4,6 @@ lib
 cluster_visualizations/*
 tcp_variation_notebooks
 csvs
+
+src/jupyter_notebook/cluster_visualizations/*
+!src/jupyter_notebook/cluster_visualizations/README.md
